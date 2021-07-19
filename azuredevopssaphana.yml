@@ -55,11 +55,9 @@ parameters:
 - name: location
   displayName: Target Region
   type: string
-  default: "France Central"
+  default: "West Europe"
   values:
   - "West Europe"
-  - "France Central"
-  - "Germany West Central"
 
 - name: vnet_subnet
   displayName: Target VNET & Subnet
@@ -122,11 +120,6 @@ parameters:
 
 - name: hcmt
   displayName: HANA performance checks
-  type: boolean
-  default: False
-
-- name: cleanup
-  displayName: Remove everything at the end
   type: boolean
   default: False
 
@@ -447,35 +440,3 @@ stages:
         args: -v 
         failOnStdErr: false
 
-- stage: Cleanup
-  condition: eq(${{ parameters.cleanup }}, true)
-  jobs:
-  - job: Remove_Backups
-    steps:
-    - checkout: none
-    - task: PowerShell@2
-      displayName: 'HANA Backup Removal (PWSH)'
-      inputs:
-        targetType: 'filePath'
-        filePath: '$(System.DefaultWorkingDirectory)/Scripts/BackupDisable.ps1'
-        arguments: >
-          -SID "${{ parameters.sid }}"
-          -RSV "$(rsv)"
-          -RGV "$(rsv-rg)"
-          -VM "${{ parameters.vmname }}"
-          -VMRG "$(hanavmrg)"
-          -POL "NA"
-        errorActionPreference: continue
-        showWarnings: true
-        failOnStderr: false
-
-  - job: Remove_RG
-    steps:
-    - task: AzureResourceManagerTemplateDeployment@3
-      displayName: 'Remove Resource Group'
-      inputs:
-        deploymentScope: 'Resource Group'
-        azureResourceManagerConnection: '$(azureconnectionname)'
-        subscriptionId: '$(subscription)'
-        action: 'DeleteRG'
-        resourceGroupName: '$(hanavmrg)'
